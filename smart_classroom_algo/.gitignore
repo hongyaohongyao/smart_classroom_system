@@ -1,0 +1,4 @@
+workspace
+lean/*
+!lean/README.md
+build

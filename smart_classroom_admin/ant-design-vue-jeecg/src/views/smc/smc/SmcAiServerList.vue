@@ -1,0 +1,248 @@
+<template>
+  <a-card :bordered="false">
+    <!-- 查询区域 -->
+    <div class="table-page-search-wrapper">
+      <a-form layout="inline" @keyup.enter.native="searchQuery">
+        <a-row :gutter="24">
+        </a-row>
+      </a-form>
+    </div>
+    <!-- 查询区域-END -->
+
+    <!-- 操作按钮区域 -->
+    <div class="table-operator">
+      <a-button @click="handleAdd" type="primary" icon="plus">新增</a-button>
+      <a-button type="primary" icon="download" @click="handleExportXls('智慧教室ai服务器')">导出</a-button>
+      <a-upload name="file" :showUploadList="false" :multiple="false" :headers="tokenHeader" :action="importExcelUrl"
+                @change="handleImportExcel">
+        <a-button type="primary" icon="import">导入</a-button>
+      </a-upload>
+      <!-- 高级查询区域 -->
+      <j-super-query :fieldList="superFieldList" ref="superQueryModal"
+                     @handleSuperQuery="handleSuperQuery"></j-super-query>
+      <a-dropdown v-if="selectedRowKeys.length > 0">
+        <a-menu slot="overlay">
+          <a-menu-item key="1" @click="batchReconnect">
+            <a-icon type="delete"/>
+            重连
+          </a-menu-item>
+          <a-menu-item key="1" @click="batchDel">
+            <a-icon type="delete"/>
+            删除
+          </a-menu-item>
+        </a-menu>
+        <a-button style="margin-left: 8px"> 批量操作
+          <a-icon type="down"/>
+        </a-button>
+      </a-dropdown>
+    </div>
+
+    <!-- table区域-begin -->
+    <div>
+      <div class="ant-alert ant-alert-info" style="margin-bottom: 16px;">
+        <i class="anticon anticon-info-circle ant-alert-icon"></i> 已选择 <a
+        style="font-weight: 600">{{ selectedRowKeys.length }}</a>项
+        <a style="margin-left: 24px" @click="onClearSelected">清空</a>
+      </div>
+
+      <a-table
+        ref="table"
+        size="middle"
+        :scroll="{x:true}"
+        bordered
+        rowKey="id"
+        :columns="columns"
+        :dataSource="dataSource"
+        :pagination="ipagination"
+        :loading="loading"
+        :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
+        class="j-table-force-nowrap"
+        @change="handleTableChange">
+
+        <template slot="htmlSlot" slot-scope="text">
+          <div v-html="text"></div>
+        </template>
+        <template slot="imgSlot" slot-scope="text">
+          <span v-if="!text" style="font-size: 12px;font-style: italic;">无图片</span>
+          <img v-else :src="getImgView(text)" height="25px" alt=""
+               style="max-width:80px;font-size: 12px;font-style: italic;"/>
+        </template>
+        <template slot="fileSlot" slot-scope="text">
+          <span v-if="!text" style="font-size: 12px;font-style: italic;">无文件</span>
+          <a-button
+            v-else
+            :ghost="true"
+            type="primary"
+            icon="download"
+            size="small"
+            @click="downloadFile(text)">
+            下载
+          </a-button>
+        </template>
+
+        <span slot="action" slot-scope="text, record">
+          <a @click="handleEdit(record)">编辑</a>
+
+          <a-divider type="vertical"/>
+          <a-dropdown>
+            <a class="ant-dropdown-link">更多 <a-icon type="down"/></a>
+            <a-menu slot="overlay">
+              <a-menu-item>
+                <a @click="handleReconnect(record)">重连</a>
+              </a-menu-item>
+              <a-menu-item>
+                <a @click="handleDetail(record)">详情</a>
+              </a-menu-item>
+              <a-menu-item>
+                <a-popconfirm title="确定删除吗?" @confirm="() => handleDelete(record.id)">
+                  <a>删除</a>
+                </a-popconfirm>
+              </a-menu-item>
+            </a-menu>
+          </a-dropdown>
+        </span>
+
+      </a-table>
+    </div>
+
+    <smc-ai-server-modal ref="modalForm" @ok="modalFormOk"></smc-ai-server-modal>
+  </a-card>
+</template>
+
+<script>
+
+import '@assets/less/TableExpand.less'
+import {mixinDevice} from '@/utils/mixin'
+import {JeecgListMixin} from '@/mixins/JeecgListMixin'
+import SmcAiServerModal from './modules/SmcAiServerModal'
+import {deleteAction, getAction, putAction} from "@api/manage";
+
+export default {
+  name: 'SmcAiServerList',
+  mixins: [JeecgListMixin, mixinDevice],
+  components: {
+    SmcAiServerModal
+  },
+  data() {
+    return {
+      description: '智慧教室ai服务器管理页面',
+      // 表头
+      columns: [
+        {
+          title: '#',
+          dataIndex: '',
+          key: 'rowIndex',
+          width: 60,
+          align: "center",
+          customRender: function (t, r, index) {
+            return parseInt(index) + 1;
+          }
+        },
+        {
+          title: '服务器名称',
+          align: "center",
+          dataIndex: 'serverName'
+        },
+        {
+          title: '服务器地址',
+          align: "center",
+          dataIndex: 'serverUrl'
+        },
+        {
+          title: '服务器状态',
+          align: "center",
+          dataIndex: 'serverState_dictText'
+        },
+        {
+          title: '操作',
+          dataIndex: 'action',
+          align: "center",
+          fixed: "right",
+          width: 147,
+          scopedSlots: {customRender: 'action'}
+        }
+      ],
+      url: {
+        list: "/smc/smcAiServer/list",
+        delete: "/smc/smcAiServer/delete",
+        deleteBatch: "/smc/smcAiServer/deleteBatch",
+        exportXlsUrl: "/smc/smcAiServer/exportXls",
+        importExcelUrl: "smc/smcAiServer/importExcel",
+        reconnect: "/smc/smcAiServerExtra/reconnect",
+        reconnectBatch: "/smc/smcAiServerExtra/reconnectBatch",
+      },
+      dictOptions: {},
+      superFieldList: [],
+    }
+  },
+  created() {
+    this.getSuperFieldList();
+  },
+  computed: {
+    importExcelUrl: function () {
+      return `${window._CONFIG['domianURL']}/${this.url.importExcelUrl}`;
+    },
+  },
+  methods: {
+    batchReconnect() {
+      if (this.selectedRowKeys.length <= 0) {
+        this.$message.warning('请选择一条记录！');
+      } else {
+        var ids = "";
+        for (var a = 0; a < this.selectedRowKeys.length; a++) {
+          ids += this.selectedRowKeys[a] + ",";
+        }
+        var that = this;
+        this.$confirm({
+          title: "确认重连",
+          content: "是否重连选中服务器?",
+          onOk: function () {
+            that.loading = true;
+            getAction(that.url.reconnectBatch, {ids: ids}).then((res) => {
+              if (res.success) {
+                that.$message.success(res.message);
+              } else {
+                that.$message.warning(res.message);
+              }
+              //重新计算分页问题
+              that.reCalculatePage(that.selectedRowKeys.length)
+              that.loadData();
+              that.onClearSelected();
+            }).finally(() => {
+              that.loading = false;
+            });
+          }
+        });
+      }
+    },
+    handleReconnect(record) {
+      let that = this
+      this.loading = true
+      getAction(this.url.reconnect, {id: record.id}).then((res) => {
+        if (res.success) {
+          that.$message.success(res.message);
+        } else {
+          that.$message.warning(res.message);
+        }
+        //重新计算分页问题
+        that.reCalculatePage(1)
+        that.loadData();
+      }).finally(() => {
+        that.loading = false
+      })
+    },
+    initDictConfig() {
+    },
+    getSuperFieldList() {
+      let fieldList = [];
+      fieldList.push({type: 'string', value: 'serverName', text: '服务器名称', dictCode: ''})
+      fieldList.push({type: 'string', value: 'serverUrl', text: '服务器地址', dictCode: ''})
+      fieldList.push({type: 'int', value: 'serverState', text: '服务器状态', dictCode: 'ai_server_state'})
+      this.superFieldList = fieldList
+    }
+  }
+}
+</script>
+<style scoped>
+@import '~@assets/less/common.less';
+</style>
