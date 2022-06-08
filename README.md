@@ -170,7 +170,7 @@ cmake --build ./build --target smart_classroom_algo
 
 点击workspace下面的smart_classroom_algo可执行文件启动程序
 
-# 使用项目
+# 参考项目
 
 ## 系统开发
 
