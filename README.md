@@ -90,9 +90,9 @@ npm serve run
 
 ## 管理系统(smart_classroom_admin)
 
-- 按照好数据服务里面的docker镜像应该就能直接启动了
+- 安装好上面要求的的docker镜像应该就能直接启动了
 - 把smart_classroom_admin/db/smc_db.sql导入mysql数据库
-- 管理系统使用Jeecgboot开发，具体可以参考[他们的官方文档](http://jeecg-boot.mydoc.io/)  
+- 管理系统使用Jeecgboot开发，框架细节可以参考[他们的官方文档](http://jeecg-boot.mydoc.io/)  
 
 ## 算法服务(smart_classroom_algo)
 
