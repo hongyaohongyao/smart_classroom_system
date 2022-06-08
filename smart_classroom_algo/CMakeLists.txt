@@ -55,20 +55,20 @@ set(MYSQL_DIR $ENV{MYSQL_HOME})
 set(AWSSDK_DIR $ENV{AWSSDK_HOME})
 set(DROGON_DIR $ENV{DROGON_HOME})
 set(JSONCPP_DIR $ENV{JSONCPP_HOME})
+set(Protobuf_DIR $ENV{PROTOBUF_HOME})
 find_package(AWSSDK REQUIRED COMPONENTS s3)
 find_package(DROGON REQUIRED)
 find_package(Jsoncpp REQUIRED)
+find_package(Protobuf REQUIRED)
 #add_subdirectory(third_party/drogon) # if not DROGON_HOME
 
-# 因为protobuf，需要用特定版本，所以这里指定路径
-set(PROTOBUF_DIR "./lean/protobuf")
 
 #cuda
 include_directories(${CUDA_DIR}/include)
 link_directories(${CUDA_DIR}/lib/x64)
 #protobuf
-include_directories(${PROTOBUF_DIR}/include)
-link_directories(${PROTOBUF_DIR}/lib)
+MESSAGE(${Protobuf_INCLUDE_DIR})
+include_directories(${Protobuf_INCLUDE_DIR})
 #tensorrt
 include_directories(${TENSORRT_DIR}/include)
 link_directories(${TENSORRT_DIR}/lib)
@@ -86,9 +86,6 @@ include_directories(${CURL_INCLUDE_DIR})
 include_directories(${JSONCPP_INCLUDE_DIRS})
 #drogon
 include_directories(${DROGON_INCLUDE_DIRS})
-##mysql
-#include_directories(${MYSQL_DIR}/include)
-#link_directories(${MYSQL_DIR}/lib)
 
 include_directories(
         ${PROJECT_SOURCE_DIR}/modules/smart_classroom/include
@@ -112,10 +109,9 @@ file(GLOB_RECURSE srcs
         )
 
 cuda_add_executable(${PROJECT_NAME} ${srcs})
-
 target_link_libraries(${PROJECT_NAME} nvinfer nvinfer_plugin sort_cpp) # link tensorrt
 target_link_libraries(${PROJECT_NAME} cuda cublas cudart cudnn) # link cuda
-target_link_libraries(${PROJECT_NAME} libprotobuf libprotobufd) # link protobuf
+target_link_libraries(${PROJECT_NAME} ${Protobuf_LIBRARIES}) # link protobuf
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS}) # link opencv
 target_link_libraries(${PROJECT_NAME} avutil avcodec avfilter avdevice avformat postproc) # link ffmpeg
 target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES}) # link libcurl

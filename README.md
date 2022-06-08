@@ -1,4 +1,6 @@
-# 智慧教室 在线监考系统
+# 智慧教室在线监考系统
+
+作弊检测、考生点名
 
 ## 架构
 
@@ -20,7 +22,7 @@
 
 上传的照片最好给脸部周围留点位置，不然检测不出来
 
-![人脸信息上传](.img/README/人脸信息上传.png)
+![人脸信息上传](.img/README/人脸信息上传.png) 
 
 ### 考生点名
 
@@ -32,7 +34,7 @@
 
 ## 服务器管理
 
-添加smart_classroom_algo服务器程序
+添加smart_classroom_algo服务器程序，服务器名字直接设置路径就好，比如`http://127.0.0.1:12121`.
 
 ![添加多台算法服务器](.img/README/添加多台算法服务器.png)
 
@@ -54,7 +56,6 @@ docker run -d -v /d/cache/docker/mysql/conf:/etc/mysql -v /d/cache/docker/mysql/
 
 ```
 docker pull redis
-
 docker run --name smc_redis -d redis
 ```
 
@@ -62,7 +63,6 @@ docker run --name smc_redis -d redis
 
 ```shell
 docker pull minio/minio
-
 docker run -p 9000:9000 -p 9001:9001 --name smc_minio -e "MINIO_ROOT_USER=hongyaohongyao" -e "MINIO_ROOT_PASSWORD=hongyaohongyao123" -v /d/cache/docker/minio/data:/data -d minio/minio server /data --console-address ":9001"
 ```
 
@@ -70,7 +70,6 @@ docker run -p 9000:9000 -p 9001:9001 --name smc_minio -e "MINIO_ROOT_USER=hongya
 
 ```shell
 docker pull mugennsou/nginx-http-flv
-
 docker run -d -p 8888:80 -p 1935:1935 --name smc_video mugennsou/nginx-http-flv
 ```
 
@@ -101,15 +100,56 @@ npm serve run
 
 ### 依赖和环境变量
 
-- CUDA_PATH：cuda安装路径
-- CUDNN_HOME：cudnn安装路径
-- TENSORRT_HOME：tensorrt安装路径
-- OPENCV_HOME：opencv安装路径
-- FFMPEG_HOME：ffmpeg安装路径
-- AWSSDK_HOME：aws-cpp-sdk安装路径，需要安装core和s3
-- DROGON_HOME：drogon框架安装路径
-- JSONCPP_HOME：jsoncpp安装路径
-- 在`lean`下面需要放置protobuf，这个来自[tensorRT_Pro](https://github.com/shouxieai/tensorRT_Pro) 项目，可以看看里面的`lean`文件夹下的README
+把下面的依赖下载安装好，并添加安装目录到环境变量，自己编译的添加的是安装目录下的build目录
+
+- [CUDA_PATH](https://blog.csdn.net/m0_45447650/article/details/123704930)：cuda toolkit安装路径，根据自己N卡的cuda版本安装
+
+- [CUDNN_HOME](https://developer.nvidia.com/cudnn-download-survey)：cudnn安装路径，根据上面那个cuda toolkit的版本安装
+
+- [TENSORRT_HOME](https://developer.nvidia.com/nvidia-tensorrt-download)：tensorrt安装路径，根据上面那个cuda toolkit的版本安装
+
+- [OPENCV_HOME](https://opencv.org/releases/)：opencv安装路径（自己编译安装,目前使用版本4.5.4）
+
+- [FFMPEG_HOME](https://ffmpeg.org/)：ffmpeg安装路径（自己编译安装）
+
+- [AWSSDK_HOME](https://github.com/aws/aws-sdk-cpp)：aws-cpp-sdk安装路径（自己编译安装）
+
+  - ```shell
+    #cmake命令指定只安装s3组件
+    cmake .. -DCMAKE_BUILD_TYPE=Release
+    -DBUILD_ONLY="s3"
+    -DCMAKE_INSTALL_PREFIX=./install
+    -DCPP_STANDARD=14
+    ```
+
+- [DROGON_HOME](https://github.com/drogonframework/drogon/releases/tag/v1.7.4)：drogon框架安装路径（自己编译安装，要求c++17）
+
+- [JSONCPP_HOME](https://github.com/open-source-parsers/jsoncpp)：jsoncpp安装路径（自己编译安装）
+
+- [PROTOBUF_HOME](https://github.com/protocolbuffers/protobuf/releases/tag/v3.11.4)：Protobuf安装路径（自己编译安装，指定版本3.11.4）
+
+**使用cmake编译安装cpp源码的通用步骤** 
+
+上面有部分依赖需要自己编译源码进行安装，通常需要如下过程
+
+1. 在官网或github下载源码，然后解压到安装目录
+
+2. 在安装目录下创建build文件夹，进入build文件夹，运行cmake命令，通常为如下命令。
+
+   ```shell
+   cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install
+   ```
+
+3. 然后是编译安装
+
+   ```shell
+   #window 下一般为(Clion里面可以直接选择最上边的选项卡Build>Install点击进行编译安装)
+   cmake --build ${SRC_ROOT}/build --target install
+   #linux 下一般为
+   make && make install
+   ```
+
+4. 设置环境`SRC_HOME`为`${SRC_ROOT}/build`目录，在`PATH`变量中添加`${SRC_HOME}/install/bin`.
 
 ### 添加workspace和权重文件
 
@@ -128,7 +168,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build ./build --target smart_classroom_algo
 ```
 
-点击workspace下面的smart_classroom_algo可执行文件
+点击workspace下面的smart_classroom_algo可执行文件启动程序
 
 # 使用项目
 
