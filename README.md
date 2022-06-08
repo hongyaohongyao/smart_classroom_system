@@ -1,4 +1,4 @@
-# 智慧教室在线监考系统
+# [智慧教室在线监考系统](https://github.com/hongyaohongyao/smart_classroom_system) 
 
 作弊检测、考生点名
 
